@@ -5,38 +5,77 @@ using UnityEngine;
 public class Player : MonoBehaviour
 {
 	public float jumpVelocity;
+	public float moveVelocity;
+	public float rotationVelocity;
 
 	private Rigidbody2D rgdBody2D;
 	private BoxCollider2D boxCollider2D;
+	private SpriteRenderer spriteRenderer;
 
 	private bool canJump = true;
 	private bool sliding = false;
 	private float colliderHeight, playerHeight;
 
+	private GameManager.CURRENT_WORLD currentWorld;
+
 	// Start is called before the first frame update
 	void Start()
 	{
+		currentWorld = GameManager.Instance.currentWorld;
 		boxCollider2D = GetComponent<BoxCollider2D>();
 		colliderHeight = boxCollider2D.size.y;
 		playerHeight = transform.localScale.y;
 
 		rgdBody2D = GetComponent<Rigidbody2D>();
+		spriteRenderer = GetComponent<SpriteRenderer>();
 	}
 
 	// Update is called once per frame
 	void Update()
 	{
-		if (Input.GetKeyDown(KeyCode.Space) && canJump)
+		Vector3 rotationTargetVector = Vector3.right;
+
+		if (currentWorld == GameManager.CURRENT_WORLD.HAPPY_LAND)
 		{
-			rgdBody2D.velocity = Vector2.up * jumpVelocity;
-			canJump = false;
+			if (Input.GetKeyDown(KeyCode.Space) && canJump)
+			{
+				rgdBody2D.velocity = Vector2.up * jumpVelocity;
+				canJump = false;
+			}
+
+			if (Input.GetKeyDown(KeyCode.X) && !sliding)
+			{
+				StartCoroutine(Slide());
+				sliding = false;
+			}
+		}
+		else if (currentWorld == GameManager.CURRENT_WORLD.SCARY_LAND)
+		{
+			rotationTargetVector = Vector3.up;
+			if (Input.GetKey(KeyCode.X))
+			{
+				spriteRenderer.flipX = false;
+				rgdBody2D.velocity = Vector2.up * moveVelocity;
+
+			}
+
+			if (Input.GetKey(KeyCode.A))
+			{
+				spriteRenderer.flipX = true;
+				rgdBody2D.velocity = Vector2.down * moveVelocity;
+			}
 		}
 
-		if (Input.GetKeyDown(KeyCode.X) && !sliding)
-		{
-			StartCoroutine(Slide());
-			sliding = false;
-		}
+		//rotation for falling
+		float angle = Mathf.Atan2(rotationTargetVector.y, rotationTargetVector.x) * Mathf.Rad2Deg;
+		Quaternion q = Quaternion.AngleAxis(angle, Vector3.forward);
+		transform.rotation = Quaternion.Slerp(transform.rotation, q, Time.deltaTime * rotationVelocity);
+
+	}
+
+	public void SetWorld(GameManager.CURRENT_WORLD world)
+	{
+		currentWorld = world;
 	}
 
 	private IEnumerator Slide()

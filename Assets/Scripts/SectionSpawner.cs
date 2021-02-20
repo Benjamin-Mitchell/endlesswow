@@ -7,7 +7,8 @@ public class SectionSpawner : MonoBehaviour
 	private GameObject latestEndPoint;
 	private Vector3 spawnPoint;
 
-	public GameObject[] sections; 
+	public GameObject[] sections;
+	public GameObject grid;
 
 	// Start is called before the first frame update
 	void Start()
@@ -41,6 +42,8 @@ public class SectionSpawner : MonoBehaviour
 
 
 		temp = GameObject.Instantiate(sections[sectionIndex], latestEndPoint.transform.position, Quaternion.identity);
+		temp.transform.SetParent(grid.transform);
+		temp.transform.localScale = new Vector3(1.0f, 1.0f, 1.0f);
 		latestEndPoint = temp.GetComponent<Section>().endPoint;
 		
 	}
