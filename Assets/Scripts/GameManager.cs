@@ -48,6 +48,9 @@ public class GameManager : Singleton<GameManager>
 
 	public void EndGame()
 	{
+		currentWorld = CURRENT_WORLD.HAPPY_LAND;
+		Physics2D.gravity = new Vector2(0.0f, -9.8f);
+		Camera.main.transform.eulerAngles = new Vector3(0.0f, 0.0f, 0.0f);
 		SceneManager.LoadScene("Main");
 	}
 }

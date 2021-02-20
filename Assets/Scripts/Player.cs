@@ -15,6 +15,9 @@ public class Player : MonoBehaviour
 	private bool canJump = true;
 	private bool sliding = false;
 	private float colliderHeight, playerHeight;
+	private float gameMoveSpeed;
+
+	private LayerMask layerMask;
 
 	private GameManager.CURRENT_WORLD currentWorld;
 
@@ -28,6 +31,9 @@ public class Player : MonoBehaviour
 
 		rgdBody2D = GetComponent<Rigidbody2D>();
 		spriteRenderer = GetComponent<SpriteRenderer>();
+
+		gameMoveSpeed = GameManager.Instance.moveSpeed;
+		layerMask = LayerMask.GetMask("Floor");
 	}
 
 	// Update is called once per frame
@@ -37,16 +43,25 @@ public class Player : MonoBehaviour
 
 		if (currentWorld == GameManager.CURRENT_WORLD.HAPPY_LAND)
 		{
+			spriteRenderer.flipX = false;
 			if (Input.GetKeyDown(KeyCode.Space) && canJump)
 			{
 				rgdBody2D.velocity = Vector2.up * jumpVelocity;
 				canJump = false;
 			}
 
-			if (Input.GetKeyDown(KeyCode.X) && !sliding)
+			if (Input.GetKeyDown(KeyCode.X) /*&& !sliding*/)
 			{
-				StartCoroutine(Slide());
+				sliding = true;
+				transform.localScale = new Vector2(transform.localScale.x, playerHeight / 2.0f);
+				//StartCoroutine(Slide());
+				//sliding = false;
+			}
+
+			if (Input.GetKeyUp(KeyCode.X))
+			{
 				sliding = false;
+				transform.localScale = new Vector2(transform.localScale.x, playerHeight);
 			}
 		}
 		else if (currentWorld == GameManager.CURRENT_WORLD.SCARY_LAND)
@@ -55,14 +70,31 @@ public class Player : MonoBehaviour
 			if (Input.GetKey(KeyCode.X))
 			{
 				spriteRenderer.flipX = false;
-				rgdBody2D.velocity = Vector2.up * moveVelocity;
-
+				rgdBody2D.velocity = new Vector2(rgdBody2D.velocity.x , moveVelocity);
 			}
 
 			if (Input.GetKey(KeyCode.A))
 			{
 				spriteRenderer.flipX = true;
-				rgdBody2D.velocity = Vector2.down * moveVelocity;
+				rgdBody2D.velocity = new Vector2(rgdBody2D.velocity.x, -moveVelocity);
+			}
+
+			//Always start moving towards center of the screen
+			if (transform.position.x < 1.5f)
+				Physics2D.gravity = new Vector2(Mathf.Abs(transform.position.x), 0.0f);
+			else
+				Physics2D.gravity = new Vector2(0.0f, 0.0f);
+			
+			//raycast for moving floors. Stops the character from getting stuck in them.
+			RaycastHit2D hit = Physics2D.Raycast(transform.position, Vector2.right, 1.0f, layerMask);
+			if (hit.collider != null)
+			{
+				if (hit.collider.gameObject.CompareTag("Floor"))
+				{	
+					//do something to stay up....
+					float moveDelta = gameMoveSpeed * Time.deltaTime;
+					transform.position = new Vector3(transform.position.x - moveDelta, transform.position.y, transform.position.z);
+				}
 			}
 		}
 
@@ -85,7 +117,7 @@ public class Player : MonoBehaviour
 		//boxCollider2D.offset = new Vector2(boxCollider2D.offset.x, boxCollider2D.offset.y - colliderHeight / 2.0f);
 		transform.localScale = new Vector2(transform.localScale.x, playerHeight / 2.0f);
 
-		yield return new WaitForSeconds(0.5f);
+		yield return new WaitForSeconds(0.50f);
 
 		sliding = false;
 		//boxCollider2D.size = new Vector2(boxCollider2D.size.x, colliderHeight);
