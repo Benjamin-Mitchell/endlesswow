@@ -9,6 +9,12 @@ public class Section : MonoBehaviour
 	public GameObject endPoint;
 	private Vector3 deathPoint;
 
+	GameManager.CURRENT_WORLD currentWorld;
+	GameManager gameManager;
+	public GameObject[] HappyMaps;
+	public GameObject[] EvilMaps;
+
+
 	private void Awake()
 	{
 		moveSpeed = GameManager.Instance.moveSpeed;
@@ -19,7 +25,9 @@ public class Section : MonoBehaviour
 	// Start is called before the first frame update
 	void Start()
     {
-
+		gameManager = GameManager.Instance;
+		currentWorld = gameManager.currentWorld;
+		UpdateWorld();
     }
 
     // Update is called once per frame
@@ -28,7 +36,33 @@ public class Section : MonoBehaviour
 		float moveDelta = moveSpeed * Time.deltaTime;
 		transform.position = new Vector3(transform.position.x - moveDelta, transform.position.y, transform.position.z);
 
+		if(gameManager.currentWorld != currentWorld)
+		{
+			currentWorld = gameManager.currentWorld;
+
+			UpdateWorld();
+		}
+
 		if (transform.position.x < deathPoint.x)
 			Destroy(gameObject);
     }
+
+	void UpdateWorld()
+	{
+		for (int i = 0; i < HappyMaps.Length; i++)
+		{
+			if (currentWorld == GameManager.CURRENT_WORLD.HAPPY_LAND)
+				HappyMaps[i].SetActive(true);
+			else if (currentWorld == GameManager.CURRENT_WORLD.SCARY_LAND)
+				HappyMaps[i].SetActive(false);
+		}
+
+		for (int i = 0; i < EvilMaps.Length; i++)
+		{
+			if (currentWorld == GameManager.CURRENT_WORLD.SCARY_LAND)
+				EvilMaps[i].SetActive(true);
+			else if (currentWorld == GameManager.CURRENT_WORLD.HAPPY_LAND)
+				EvilMaps[i].SetActive(false);
+		}
+	}
 }
