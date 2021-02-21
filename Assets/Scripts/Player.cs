@@ -72,7 +72,8 @@ public class Player : MonoBehaviour
 			if (Input.GetKeyDown(KeyCode.X) /*&& !sliding*/)
 			{
 				animator.SetTrigger("StartSlide");
-				//transform.localScale = new Vector2(transform.localScale.x, playerHeight / 2.0f);
+				boxCollider2D.size = new Vector2(boxCollider2D.size.x, 0.07f);
+				boxCollider2D.offset = new Vector2(boxCollider2D.offset.x, -0.125f);
 				//StartCoroutine(Slide());
 				//sliding = false;
 			}
@@ -80,6 +81,8 @@ public class Player : MonoBehaviour
 			if (Input.GetKeyUp(KeyCode.X))
 			{
 				animator.SetTrigger("StopSlide");
+				boxCollider2D.size = new Vector2(boxCollider2D.size.x, 0.16f);
+				boxCollider2D.offset = new Vector2(boxCollider2D.offset.x, -0.08f);
 				//transform.localScale = new Vector2(transform.localScale.x, playerHeight);
 			}
 		}
@@ -207,8 +210,19 @@ public class Player : MonoBehaviour
 			health--;
 			if (health < 1)
 				gameManager.EndGame();
+
 			Destroy(collision.gameObject);
 		}
+
+		//if (collision.gameObject.CompareTag("EvilMob"))
+		//{
+		//	hearts[health - 1].sprite = heartBroken;
+		//	health--;
+		//	if (health < 1)
+		//		gameManager.EndGame();
+		//
+		//	collision.gameObject.GetComponent<EvilMob>().Die();
+		//}
 
 		if (collision.gameObject.CompareTag("Healing"))
 		{
