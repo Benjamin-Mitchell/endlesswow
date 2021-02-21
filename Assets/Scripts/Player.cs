@@ -16,6 +16,8 @@ public class Player : MonoBehaviour
 
 	public GameObject raySource;
 
+	public GameObject goodProjectile, badProjectile;
+
 	private Rigidbody2D rgdBody2D;
 	private BoxCollider2D boxCollider2D;
 	private SpriteRenderer spriteRenderer;
@@ -36,6 +38,9 @@ public class Player : MonoBehaviour
 
 	private int health = 8;
 	private int maxHealth = 8;
+
+	private bool canShoot = true;
+	private float shootCooldown = 0.5f;
 
 	// Start is called before the first frame update
 	void Start()
@@ -71,7 +76,7 @@ public class Player : MonoBehaviour
 
 			if (Input.GetKeyDown(KeyCode.X) /*&& !sliding*/)
 			{
-				animator.SetTrigger("StartSlide");
+				animator.SetBool("Slide", true);
 				boxCollider2D.size = new Vector2(boxCollider2D.size.x, 0.07f);
 				boxCollider2D.offset = new Vector2(boxCollider2D.offset.x, -0.125f);
 				//StartCoroutine(Slide());
@@ -80,10 +85,20 @@ public class Player : MonoBehaviour
 
 			if (Input.GetKeyUp(KeyCode.X))
 			{
-				animator.SetTrigger("StopSlide");
+				animator.SetBool("Slide", false);
 				boxCollider2D.size = new Vector2(boxCollider2D.size.x, 0.16f);
 				boxCollider2D.offset = new Vector2(boxCollider2D.offset.x, -0.08f);
 				//transform.localScale = new Vector2(transform.localScale.x, playerHeight);
+			}
+
+			if(Input.GetKeyDown(KeyCode.P) && canShoot)
+			{
+				StartCoroutine(ShootCooldown());
+				animator.SetTrigger("Attack");
+				Vector2 spawnPos = boxCollider2D.bounds.center + new Vector3(boxCollider2D.bounds.size.x / 2.0f, 0.0f, 0.0f);
+				GameObject proj = GameObject.Instantiate(goodProjectile, spawnPos, Quaternion.identity);
+				Projectile proje = proj.GetComponentInChildren<Projectile>();
+				proje.SetDirection(Vector2.right);
 			}
 		}
 		else if (currentWorld == GameManager.CURRENT_WORLD.SCARY_LAND)
@@ -93,12 +108,42 @@ public class Player : MonoBehaviour
 			{
 				spriteRenderer.flipX = false;
 				rgdBody2D.velocity = new Vector2(rgdBody2D.velocity.x , moveVelocity);
+
+				if (Input.GetKeyDown(KeyCode.P) && canShoot)
+				{
+					StartCoroutine(ShootCooldown());
+					animator.SetTrigger("Attack");
+					Vector2 spawnPos = boxCollider2D.bounds.center + new Vector3(0.0f, boxCollider2D.bounds.size.x / 2.0f, 0.0f);
+					GameObject proj = GameObject.Instantiate(badProjectile, spawnPos, Quaternion.identity);
+					Projectile proje = proj.GetComponentInChildren<Projectile>();
+					proje.SetDirection(Vector3.up);
+				}
 			}
 
 			if (Input.GetKey(KeyCode.A))
 			{
 				spriteRenderer.flipX = true;
 				rgdBody2D.velocity = new Vector2(rgdBody2D.velocity.x, -moveVelocity);
+
+				if (Input.GetKeyDown(KeyCode.P) && canShoot)
+				{
+					StartCoroutine(ShootCooldown());
+					animator.SetTrigger("Attack");
+					Vector2 spawnPos = boxCollider2D.bounds.center - new Vector3(0.0f, boxCollider2D.bounds.size.x / 2.0f, 0.0f);
+					GameObject proj = GameObject.Instantiate(badProjectile, spawnPos, Quaternion.identity);
+					Projectile proje = proj.GetComponentInChildren<Projectile>();
+					proje.SetDirection(Vector3.down);
+				}
+			}
+
+			if (Input.GetKeyDown(KeyCode.P) && canShoot)
+			{
+				StartCoroutine(ShootCooldown());
+				animator.SetTrigger("DownAttack");
+				Vector2 spawnPos = boxCollider2D.bounds.center + new Vector3(boxCollider2D.bounds.size.y / 2.0f, 0.0f, 0.0f);
+				GameObject proj = GameObject.Instantiate(badProjectile, spawnPos, Quaternion.identity);
+				Projectile proje = proj.GetComponentInChildren<Projectile>();
+				proje.SetDirection(Vector3.right);
 			}
 
 			grounded = false;
@@ -144,6 +189,13 @@ public class Player : MonoBehaviour
 
 		if(health < 1)
 			gameManager.EndGame();
+	}
+
+	private IEnumerator ShootCooldown()
+	{
+		canShoot = false;
+		yield return new WaitForSeconds(shootCooldown);
+		canShoot = true;
 	}
 
 	public void SetWorld(GameManager.CURRENT_WORLD world)
@@ -204,7 +256,7 @@ public class Player : MonoBehaviour
 			gameManager.EndGame();
 		}
 
-		if (collision.gameObject.CompareTag("Damaging"))
+		if (collision.gameObject.CompareTag("GoodMob"))
 		{
 			hearts[health - 1].sprite = heartBroken;
 			health--;
@@ -214,15 +266,15 @@ public class Player : MonoBehaviour
 			Destroy(collision.gameObject);
 		}
 
-		//if (collision.gameObject.CompareTag("EvilMob"))
-		//{
-		//	hearts[health - 1].sprite = heartBroken;
-		//	health--;
-		//	if (health < 1)
-		//		gameManager.EndGame();
-		//
-		//	collision.gameObject.GetComponent<EvilMob>().Die();
-		//}
+		if (collision.gameObject.CompareTag("EvilMob"))
+		{
+			hearts[health - 1].sprite = heartBroken;
+			health--;
+			if (health < 1)
+				gameManager.EndGame();
+		
+			collision.gameObject.GetComponent<EvilMob>().Die();
+		}
 
 		if (collision.gameObject.CompareTag("Healing"))
 		{
