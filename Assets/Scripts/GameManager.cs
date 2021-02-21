@@ -6,6 +6,7 @@ using UnityEngine.SceneManagement;
 public class GameManager : Singleton<GameManager>
 {
 	public float moveSpeed = 4;
+	private float fixedSpeed;
 
 	//0 = happy land, 1 = scary land
 	public enum CURRENT_WORLD { HAPPY_LAND, SCARY_LAND};
@@ -16,6 +17,7 @@ public class GameManager : Singleton<GameManager>
 	// Start is called before the first frame update
 	void Start()
 	{
+		fixedSpeed = moveSpeed;
 		player = GameObject.Find("Player").GetComponent<Player>();
 	}
 
@@ -24,26 +26,49 @@ public class GameManager : Singleton<GameManager>
 	{
 		if (Input.GetKeyDown(KeyCode.G))
 		{
-			SwitchWorld();
+			StartWorldSwitch();
+			
 		}
 	}
 
-	public void SwitchWorld()
+	private void StartWorldSwitch()
 	{
-		currentWorld = (CURRENT_WORLD)(((int)currentWorld + 1) % 2);
+		//can't update actual currentworld yet - sections rely on that info.
+		CURRENT_WORLD  nextWorld = (CURRENT_WORLD)(((int)currentWorld + 1) % 2);
+		moveSpeed = 0;
+		Physics2D.gravity = new Vector2(0.0f, 0.0f);
+		player.StartWorldSwitch(nextWorld);
 
-		if(currentWorld == CURRENT_WORLD.SCARY_LAND)
+		StartCoroutine(PerformWorldSwitchOne(nextWorld));
+	}
+
+	private IEnumerator PerformWorldSwitchOne(CURRENT_WORLD nextWorld)
+	{
+		yield return new WaitForSeconds(0.5f);
+		
+		//can update currentWorld now.
+		currentWorld = nextWorld;
+
+		if (currentWorld == CURRENT_WORLD.SCARY_LAND)
 		{
 			Physics2D.gravity = new Vector2(0.0f, 0.0f);
 			Camera.main.transform.eulerAngles = new Vector3(0.0f, 0.0f, 90.0f);
 		}
-		else if(currentWorld == CURRENT_WORLD.HAPPY_LAND)
+		else if (currentWorld == CURRENT_WORLD.HAPPY_LAND)
 		{
 			Physics2D.gravity = new Vector2(0.0f, -9.8f);
 			Camera.main.transform.eulerAngles = new Vector3(0.0f, 0.0f, 0.0f);
 		}
 
 		player.SetWorld(currentWorld);
+		StartCoroutine(PerformWorldSwitchTwo());
+	}
+
+	private IEnumerator PerformWorldSwitchTwo()
+	{
+		yield return new WaitForSeconds(0.5f);
+		player.ResumePhysics();
+		moveSpeed = fixedSpeed;
 	}
 
 	public void EndGame()

@@ -18,6 +18,8 @@ public class Player : MonoBehaviour
 	private float colliderHeight, playerHeight;
 	private float gameMoveSpeed;
 
+	private Vector2 cachedVelocity;
+
 	private LayerMask layerMask;
 
 	private GameManager.CURRENT_WORLD currentWorld;
@@ -46,7 +48,6 @@ public class Player : MonoBehaviour
 	{
 		animator.SetFloat("VertVelocity", rgdBody2D.velocity.y);
 		animator.SetFloat("HorizVelocity", rgdBody2D.velocity.x);
-		Debug.Log(animator.GetFloat("VertVelocity"));
 		Vector3 rotationTargetVector = Vector3.right;
 
 		if (currentWorld == GameManager.CURRENT_WORLD.HAPPY_LAND)
@@ -123,14 +124,27 @@ public class Player : MonoBehaviour
 		Quaternion q = Quaternion.AngleAxis(angle, Vector3.forward);
 		transform.rotation = Quaternion.Slerp(transform.rotation, q, Time.deltaTime * rotationVelocity);
 
-		if(health < 8)
+		if(health < 1)
 			GameManager.Instance.EndGame();
 	}
 
 	public void SetWorld(GameManager.CURRENT_WORLD world)
 	{
 		currentWorld = world;
+	}
+
+	public void StartWorldSwitch(GameManager.CURRENT_WORLD world)
+	{
+		//pause Phyiscs
+		cachedVelocity = rgdBody2D.velocity;
+		rgdBody2D.velocity = Vector2.zero;
+
 		animator.SetBool("BadLand", world == GameManager.CURRENT_WORLD.SCARY_LAND ? true : false);
+	}
+
+	public void ResumePhysics()
+	{
+		rgdBody2D.velocity = cachedVelocity;
 	}
 
 	//private IEnumerator Slide()
@@ -162,7 +176,10 @@ public class Player : MonoBehaviour
 
 		if (collision.gameObject.CompareTag("Damaging"))
 		{
-			GameManager.Instance.EndGame();
+			health--;
+			if (health < 1)
+				GameManager.Instance.EndGame();
+			Destroy(collision.gameObject);
 		}
 	}
 }

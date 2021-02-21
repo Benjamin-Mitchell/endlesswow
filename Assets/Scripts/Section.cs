@@ -43,6 +43,8 @@ public class Section : MonoBehaviour
 			UpdateWorld();
 		}
 
+		moveSpeed = gameManager.moveSpeed;
+
 		if (transform.position.x < deathPoint.x)
 			Destroy(gameObject);
     }
