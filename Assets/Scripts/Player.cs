@@ -22,6 +22,9 @@ public class Player : MonoBehaviour
 
 	private GameManager.CURRENT_WORLD currentWorld;
 
+	private int health = 8;
+	private int maxHealth = 8;
+
 	// Start is called before the first frame update
 	void Start()
 	{
@@ -120,6 +123,8 @@ public class Player : MonoBehaviour
 		Quaternion q = Quaternion.AngleAxis(angle, Vector3.forward);
 		transform.rotation = Quaternion.Slerp(transform.rotation, q, Time.deltaTime * rotationVelocity);
 
+		if(health < 8)
+			GameManager.Instance.EndGame();
 	}
 
 	public void SetWorld(GameManager.CURRENT_WORLD world)
@@ -151,6 +156,11 @@ public class Player : MonoBehaviour
 		}
 
 		if(collision.gameObject.CompareTag("Lethal"))
+		{
+			GameManager.Instance.EndGame();
+		}
+
+		if (collision.gameObject.CompareTag("Damaging"))
 		{
 			GameManager.Instance.EndGame();
 		}
