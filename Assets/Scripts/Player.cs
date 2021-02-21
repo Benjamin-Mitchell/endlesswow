@@ -8,6 +8,14 @@ public class Player : MonoBehaviour
 	public float moveVelocity;
 	public float rotationVelocity;
 
+	public SpriteRenderer[] hearts = new SpriteRenderer[8];
+	public SpriteRenderer[] heartBackgrounds = new SpriteRenderer[8];
+
+	public Sprite heartFull, heartBroken;
+	public Sprite goodHeartBackground, badHeartBackground;
+
+	public GameObject raySource;
+
 	private Rigidbody2D rgdBody2D;
 	private BoxCollider2D boxCollider2D;
 	private SpriteRenderer spriteRenderer;
@@ -24,13 +32,16 @@ public class Player : MonoBehaviour
 
 	private GameManager.CURRENT_WORLD currentWorld;
 
+	private GameManager gameManager;
+
 	private int health = 8;
 	private int maxHealth = 8;
 
 	// Start is called before the first frame update
 	void Start()
 	{
-		currentWorld = GameManager.Instance.currentWorld;
+		gameManager = GameObject.Find("GameManager").GetComponent<GameManager>();
+		currentWorld = gameManager.currentWorld;
 		boxCollider2D = GetComponent<BoxCollider2D>();
 		colliderHeight = boxCollider2D.size.y;
 		playerHeight = transform.localScale.y;
@@ -39,7 +50,7 @@ public class Player : MonoBehaviour
 		spriteRenderer = GetComponent<SpriteRenderer>();
 		animator = GetComponent<Animator>();
 
-		gameMoveSpeed = GameManager.Instance.moveSpeed;
+		gameMoveSpeed = gameManager.moveSpeed;
 		layerMask = LayerMask.GetMask("Floor");
 	}
 
@@ -47,7 +58,6 @@ public class Player : MonoBehaviour
 	void Update()
 	{
 		animator.SetFloat("VertVelocity", rgdBody2D.velocity.y);
-		animator.SetFloat("HorizVelocity", rgdBody2D.velocity.x);
 		Vector3 rotationTargetVector = Vector3.right;
 
 		if (currentWorld == GameManager.CURRENT_WORLD.HAPPY_LAND)
@@ -91,22 +101,27 @@ public class Player : MonoBehaviour
 			grounded = false;
 			
 			//raycast for moving floors. Stops the character from getting stuck in them.
-			RaycastHit2D hit = Physics2D.Raycast(transform.position, Vector2.right, 0.9f, layerMask);
+			//upgrade this to a better box cast.
+			RaycastHit2D hit = Physics2D.BoxCast(raySource.gameObject.transform.position, boxCollider2D.bounds.size, 0f, Vector2.right, 0.1f, layerMask);
 			if (hit.collider != null)
 			{
+				Debug.Log(hit.collider.name);
 				if (hit.collider.gameObject.CompareTag("Floor"))
 				{
 					grounded = true;
+
+					float hitpos = hit.point.x;
 					//do something to stay up....
-					float moveDelta = gameMoveSpeed * Time.deltaTime;
-					transform.position = new Vector3(transform.position.x - moveDelta, transform.position.y, transform.position.z);
+					//float moveDelta = gameMoveSpeed * Time.deltaTime;
+					//transform.position = new Vector3(transform.position.x - moveDelta, transform.position.y, transform.position.z);
+					transform.position = new Vector3(hit.point.x - boxCollider2D.bounds.size.y - /* magic offset number alert*/ 0.35f, transform.position.y, transform.position.z);
 				}
 			}
 
 			animator.SetBool("Grounded", grounded);
 
 			//Always start moving towards center of the screen
-			float stopPos = -2.0f;
+			float stopPos = -4.0f;
 			if (transform.position.x < stopPos && !grounded)
 			{
 				rgdBody2D.velocity = new Vector2(Mathf.Abs(transform.position.x + stopPos), rgdBody2D.velocity.y);
@@ -125,12 +140,24 @@ public class Player : MonoBehaviour
 		transform.rotation = Quaternion.Slerp(transform.rotation, q, Time.deltaTime * rotationVelocity);
 
 		if(health < 1)
-			GameManager.Instance.EndGame();
+			gameManager.EndGame();
 	}
 
 	public void SetWorld(GameManager.CURRENT_WORLD world)
 	{
 		currentWorld = world;
+		
+		foreach(SpriteRenderer background in heartBackgrounds)
+		{
+			if (currentWorld == GameManager.CURRENT_WORLD.SCARY_LAND)
+			{
+				background.sprite = badHeartBackground;
+			}
+			else
+			{
+				background.sprite = goodHeartBackground;
+			}
+		}
 	}
 
 	public void StartWorldSwitch(GameManager.CURRENT_WORLD world)
@@ -171,14 +198,23 @@ public class Player : MonoBehaviour
 
 		if(collision.gameObject.CompareTag("Lethal"))
 		{
-			GameManager.Instance.EndGame();
+			gameManager.EndGame();
 		}
 
 		if (collision.gameObject.CompareTag("Damaging"))
 		{
+			hearts[health - 1].sprite = heartBroken;
 			health--;
 			if (health < 1)
-				GameManager.Instance.EndGame();
+				gameManager.EndGame();
+			Destroy(collision.gameObject);
+		}
+
+		if (collision.gameObject.CompareTag("Healing"))
+		{
+			if(health < maxHealth)
+				health++;
+			hearts[health - 1].sprite = heartFull;
 			Destroy(collision.gameObject);
 		}
 	}

@@ -17,7 +17,8 @@ public class Section : MonoBehaviour
 
 	private void Awake()
 	{
-		moveSpeed = GameManager.Instance.moveSpeed;
+		gameManager = GameObject.Find("GameManager").GetComponent<GameManager>();
+		moveSpeed = gameManager.moveSpeed;
 		endPoint = transform.Find("EndPoint").gameObject;
 		deathPoint = GameObject.Find("SectionDeathPoint").transform.position;
 	}
@@ -25,7 +26,6 @@ public class Section : MonoBehaviour
 	// Start is called before the first frame update
 	void Start()
     {
-		gameManager = GameManager.Instance;
 		currentWorld = gameManager.currentWorld;
 		UpdateWorld();
     }

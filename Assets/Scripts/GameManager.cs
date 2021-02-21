@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
-public class GameManager : Singleton<GameManager>
+public class GameManager : MonoBehaviour
 {
 	public float moveSpeed = 4;
 	private float fixedSpeed;
@@ -13,6 +13,14 @@ public class GameManager : Singleton<GameManager>
 	public CURRENT_WORLD currentWorld = CURRENT_WORLD.HAPPY_LAND;
 
 	Player player;
+
+	public GameObject goodBackground, badBackground;
+
+	public Transform evilHeartTransform;
+	public Transform goodHeartTransform;
+
+	public GameObject hearts;
+
 
 	// Start is called before the first frame update
 	void Start()
@@ -24,6 +32,7 @@ public class GameManager : Singleton<GameManager>
 	// Update is called once per frame
 	void Update()
 	{
+
 		if (Input.GetKeyDown(KeyCode.G))
 		{
 			StartWorldSwitch();
@@ -53,14 +62,22 @@ public class GameManager : Singleton<GameManager>
 		{
 			Physics2D.gravity = new Vector2(0.0f, 0.0f);
 			Camera.main.transform.eulerAngles = new Vector3(0.0f, 0.0f, 90.0f);
+			Camera.main.transform.position = new Vector3(-4.0f, 0.0f, -10.0f);
+			badBackground.SetActive(true);
+			goodBackground.SetActive(false);
 		}
 		else if (currentWorld == CURRENT_WORLD.HAPPY_LAND)
 		{
 			Physics2D.gravity = new Vector2(0.0f, -9.8f);
 			Camera.main.transform.eulerAngles = new Vector3(0.0f, 0.0f, 0.0f);
+			Camera.main.transform.position = new Vector3(0.0f, 0.0f, -10.0f);
+			badBackground.SetActive(false);
+			goodBackground.SetActive(true);
 		}
 
 		player.SetWorld(currentWorld);
+		hearts.transform.position = currentWorld == CURRENT_WORLD.SCARY_LAND ? evilHeartTransform.position : goodHeartTransform.position;
+		hearts.transform.rotation = currentWorld == CURRENT_WORLD.SCARY_LAND ? evilHeartTransform.rotation : goodHeartTransform.rotation;
 		StartCoroutine(PerformWorldSwitchTwo());
 	}
 
